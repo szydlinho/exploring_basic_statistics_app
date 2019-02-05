@@ -37,23 +37,54 @@ shinyServer(function(input, output) {
   
   source("page_ui.R", local = TRUE, encoding = "UTF-8")
   
-  observeEvent(input$plot_kolowy_butt, {
-    
-   # output$plot_kolowy <- renderPlot({
-   #   Kolowy(input$league_typed, input$sezonFromTo[1], input$sezonFromTo[2])
-   #   })
-    
-    renderPieChart(div_id = "interactive_pie",  theme = 'jazz', 
-                   data = Kolowy_dane(input$league_typed, input$sezonFromTo[1], input$sezonFromTo[2]))
-    
+  output$teams_selection_pie <- renderUI({
+    selectInput("teams_pie", "Wybierz drużynę:", 
+                choices = as.character(teams_df$teams[teams_df$league==input$league_typed]), multiple = TRUE)
   })
   
-  observeEvent(input$plot_kolowy_butt2, {
-    
-    renderPieChart(div_id = "interactive_pie2",  theme = 'jazz', 
-                   data = Kolowy_dane(input$league_typed2, input$sezonFromTo2[1], input$sezonFromTo2[2]))
-    
+
+  
+  output$teams_selection_pie <- renderUI({
+    selectInput("teams_pie", "Wybierz drużynę:", 
+                choices = as.character(teams_df$teams[teams_df$league==input$league_typed]), multiple = TRUE)
   })
+
+  output$home_away <- renderUI({
+    radioButtons(inputId = "home_away_selection", label = "Mecze wybranej drużyny jako:", 
+                 choices = c("Gospodarz", "Gość"),
+                 selected = "Gospodarz")
+  })
+  
+  observeEvent(input$plot_kolowy_butt, {
+  
+    
+    
+    dane_pie <- Kolowy_dane(input$league_typed, input$sezonFromTo[1], input$sezonFromTo[2], team = input$teams_pie,
+                            homeaway = input$home_away_selection )
+    
+    if (!is.null(dane_pie)){
+      
+    renderPieChart(div_id = "interactive_pie",  theme = 'jazz', data = dane_pie) 
+      
+      if (is.null(input$teams_pie)){
+        output$selected_teams_pie <- renderText({ 
+          paste("Wybrane wszystkie mecze i drużyny z ", input$league_typed)
+        })
+      } else {
+        output$selected_teams_pie <- renderText({ 
+          paste("Wybrane drużyny:", paste0(input$teams_pie, collapse = ", "), "jako ", tolower(input$home_away_selection))
+        })
+      }
+
+      
+    } else {
+      output$selected_teams_pie <- renderText({ 
+        paste("Brak danych dla ", paste0(input$teams_pie, collapse = ", "), " w wybranych sezonach.")
+      })
+    
+    }
+  })
+  
 
   output$secondSelection <- renderUI({
     selectInput("teams_h1", "Wybierz drużynę:", 
@@ -66,45 +97,75 @@ shinyServer(function(input, output) {
                    input$sezonFromTo_gole[2],
                    team=input$teams_h1)
     if (nrow(dane)>0){
-      # Call functions from ECharts2Shiny to render charts
+    
       renderBarChart(div_id = "interactive_hist", grid_left = '10%', direction = "vertical", grid_right =  '15%',
                      axis.x.name = "Ilość goli", axis.y.name = "Liczebność wystąpień",
                      data = dane)
+      
+      if (is.null(input$teams_h1)){
+        output$selected_teams <- renderText({ 
+          paste("Wybrane wszystkie drużyny z ", input$league_typed_gole)
+        })
+      } else {
+        output$selected_teams <- renderText({ 
+          paste("Wybrane drużyny:", paste0(input$teams_h1, collapse = ", "))
+        })
+      }
+    } else {
+      output$selected_teams <- renderText({ 
+        paste("Brak danych dla ", paste0(input$teams_h1, collapse = ", "), " w wybranych sezonach.")
+      })
+      
+     
     }
 
     
   })
   
-  observeEvent(input$plot_hist_butt2, {
-    
-    #output$histogram_gole <- renderPlot({
-    # Histogram(input$league_typed_gole, input$sezonFromTo_gole[1], input$sezonFromTo_gole[2])
-    # })
-    
-    # Call functions from ECharts2Shiny to render charts
-    renderBarChart(div_id = "interactive_hist2", grid_left = '10%', direction = "vertical", grid_right =  '15%',
-                   axis.x.name = "Ilość goli", axis.y.name = "Liczebność wystąpień",
-                   data = Histogram_dane(input$league_typed_gole2, input$sezonFromTo_gole2[1], input$sezonFromTo_gole2[2]))
-    
+  output$teamSelectionH2 <- renderUI({
+    selectInput("teams_h2", "Wybierz drużynę:", 
+                choices = as.character(teams_df$teams[teams_df$league==input$league_typed_rozklad]), multiple = TRUE)
   })
-  
-  
+
   observeEvent(input$plot_hist_rozklad_butt, {
     
-    #output$histogram_rozklad <- renderPlot({
-    #  Histogramy_gole(input$league_typed_rozklad, input$sezonFromTo_rozklad[1], input$sezonFromTo_rozklad[2])
-    #})
+    dane_h2 <- Histogram_dane_hda_FTHG(input$league_typed_rozklad, input$sezonFromTo_rozklad[1], input$sezonFromTo_rozklad[2], 
+                                       team=input$teams_h2)
     
-    # Call functions from ECharts2Shiny to render charts
-    renderBarChart(div_id = "interactive_hist_by_final_a", grid_left = '10%', direction = "vertical", grid_right =  '27%',
-                   axis.x.name = "Ilość goli gospodarzy", axis.y.name = "Liczebność wystąpień",
-                   data = Histogram_dane_hda_FTHG(input$league_typed_rozklad, input$sezonFromTo_rozklad[1], input$sezonFromTo_rozklad[2]))
+    dane_h21 <- Histogram_dane_hda_FTAG(input$league_typed_rozklad, input$sezonFromTo_rozklad[1], input$sezonFromTo_rozklad[2], 
+                                       team=input$teams_h2)
+    if (nrow(dane_h2)>0){
+      
+      
+      # Call functions from ECharts2Shiny to render charts
+      renderBarChart(div_id = "interactive_hist_by_final_a", grid_left = '10%', direction = "vertical", grid_right =  '27%',
+                     axis.x.name = "Ilość goli gospodarzy", axis.y.name = "Liczebność wystąpień",
+                     data = dane_h2)
+      
+      
+      # Call functions from ECharts2Shiny to render charts
+      renderBarChart(div_id = "interactive_hist_by_final_b", grid_left = '10%', direction = "vertical", grid_right =  '27%',
+                     axis.x.name = "Ilość goli gości", axis.y.name = "Liczebność wystąpień",
+                     data = dane_h21)
+      
+      if (is.null(input$teams_h2)){
+        output$selected_teams_h2 <- renderText({ 
+          paste("Wybrane wszystkie drużyny z ", input$league_typed_rozklad)
+        })
+      } else {
+        output$selected_teams_h2 <- renderText({ 
+          paste("Wybrane drużyny:", paste0(input$teams_h2, collapse = ", "))
+        })
+      }
+    } else {
+      output$selected_teams_h2 <- renderText({ 
+        paste("Brak danych dla ", paste0(input$teams_h2, collapse = ", "), " w wybranych sezonach.")
+      })
+      
+      
+    }
     
-    
-    # Call functions from ECharts2Shiny to render charts
-    renderBarChart(div_id = "interactive_hist_by_final_b", grid_left = '10%', direction = "vertical", grid_right =  '27%',
-                   axis.x.name = "Ilość goli gości", axis.y.name = "Liczebność wystąpień",
-                   data = Histogram_dane_hda_FTAG(input$league_typed_rozklad, input$sezonFromTo_rozklad[1], input$sezonFromTo_rozklad[2]))
+   
     
     
   })

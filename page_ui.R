@@ -23,11 +23,15 @@ output$page <- renderUI({
                                        actionButton("plot_kolowy_butt", "Pokaż wykres kołowy", width = '80%'
                                                     , icon("bar-chart-o"), 
                                                     style="color: #fff; background-color: olivedrab; border-color: black"),
-                                       chooseSliderSkin("Simple"),
+                                       chooseSliderSkin("Modern"),
                                        setSliderColor("olivedrab",1),
                                        
                                        sliderInput("sezonFromTo", label = h4("Zakres sezonów:"), min = 2010, 
-                                                   max = 2018, value = c(2010, 2018), sep = "")
+                                                   max = 2019, value = c(2010, 2019), sep = ""),
+                                       uiOutput("teams_selection_pie"),
+                                       uiOutput("home_away"),
+                                       textOutput("selected_teams_pie")
+                                    
                        
                        ),
                        column(6, 
@@ -37,29 +41,8 @@ output$page <- renderUI({
                               deliverChart(div_id = "interactive_pie")
                               
                               #plotOutput("plot_kolowy"
-                                         )),
-                       fluidRow(column(3, 
-                                       radioButtons(inputId = "league_typed2", label = "Wybierz Lige", 
-                                                    choices = c("Premier League", "La Liga", "Seria A", "Bundesliga"), 
-                                                    selected = "Premier League"),
-                                       actionButton("plot_kolowy_butt2", "Pokaż wykres kołowy", width = '80%'
-                                                    , icon("bar-chart-o"), 
-                                                    style="color: #fff; background-color: olivedrab; border-color: black"),
-                                       chooseSliderSkin("Simple"),
-                                       setSliderColor("olivedrab",sliderId = 2),
-                                       
-                                       sliderInput("sezonFromTo2", label = h4("Zakres sezonów:"), min = 2010, 
-                                                   max = 2018, value = c(2010, 2018), sep = "")
-                                       
-                       ),
-                       column(6, 
-                              loadEChartsLibrary(),
-                              
-                              tags$div(id="interactive_pie2", style="width:100%;height:400px;"),
-                              deliverChart(div_id = "interactive_pie2")
-                              
-                              #plotOutput("plot_kolowy"
-                       ))),
+                                         ))
+                     ),
               ##############################################
               #Panel 2
               tabPanel("Liczebność goli w meczu", 
@@ -75,8 +58,9 @@ output$page <- renderUI({
                                        setSliderColor("olivedrab",sliderId = 3),
                                        
                                        sliderInput("sezonFromTo_gole", label = h4("Zakres sezonów:"), min = 2010, 
-                                                   max = 2018, value = c(2010, 2018), sep = ""),
-                                       uiOutput("secondSelection")
+                                                   max = 2019, value = c(2010, 2019), sep = ""),
+                                       uiOutput("secondSelection"),
+                                       textOutput("selected_teams")
                                        
                        ),
                        column(9, 
@@ -86,31 +70,9 @@ output$page <- renderUI({
                               
                               tags$div(id="interactive_hist", style="width:80%;height:400px;"),
                               deliverChart(div_id = "interactive_hist")
-                       ),
-                       
-                       fluidRow(column(3,
-                                       radioButtons(inputId = "league_typed_gole2", label = "Wybierz Ligę", 
-                                                    choices = c("Premier League", "La Liga", "Seria A", "Bundesliga"), 
-                                                    selected = "Premier League"),
-                                       actionButton("plot_hist_butt2", "Pokaż histogram", width = '80%'
-                                                    , icon("bar-chart-o"), 
-                                                    style="color: #fff; background-color: olivedrab; border-color: black"),
-                                       chooseSliderSkin("Simple"),
-                                       setSliderColor("olivedrab",sliderId = 4),
-                                       
-                                       sliderInput("sezonFromTo_gole2", label = h4("Zakres sezonów:"), min = 2010, 
-                                                   max = 2018, value = c(2010, 2018), sep = "")
-                                       
-                       ),
-                       column(9, 
-                              
-                              #plotOutput("histogram_gole")
-                              loadEChartsLibrary(),
-                              
-                              tags$div(id="interactive_hist2", style="width:80%;height:400px;"),
-                              deliverChart(div_id = "interactive_hist2")
                        )
-                              ))
+                       
+                    )
                      ),
               ##############################################
               #Panel 3
@@ -127,7 +89,12 @@ output$page <- renderUI({
                                        setSliderColor("olivedrab",sliderId = 5),
                                        
                                        sliderInput("sezonFromTo_rozklad", label = h4("Zakres sezonów:"), min = 2010, 
-                                                   max = 2018, value = c(2010, 2018), sep = "")
+                                                   max = 2019, value = c(2010, 2019), sep = ""),
+                                       uiOutput("teams_selection_hist_final"),
+                                       textOutput("selected_teams_hist_final"),
+                                       uiOutput("teamSelectionH2"),
+                                       textOutput("selected_teams_h2")
+                                 
                                        
                        ),
                        column(9, 
@@ -161,7 +128,7 @@ output$page <- renderUI({
                                        setSliderColor("olivedrab",sliderId = 5),
                                        
                                        sliderInput("sezonFromTo_contingency", label = h4("Zakres sezonów:"), min = 2010, 
-                                                   max = 2018, value = c(2010, 2018), sep = "")
+                                                   max = 2019, value = c(2010, 2019), sep = "")
                                        
                        ),
                        column(7, 
