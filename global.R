@@ -4,7 +4,7 @@ library(scales)
 #library(plyr)
 library(data.table)
 library(dplyr)
-
+library(xlsx)
 # league <- "Premier League"
 # sezon_start <- 2010
 # sezon_end <- 2018
@@ -149,7 +149,7 @@ Histogram <- function(league, sezon_start, sezon_end){
     geom_histogram(stat="identity",position="dodge") +
     labs(title= paste0("Liczebność goli w meczu - ", 
                        league_name, ".\n Od sezonu 20", sezon_start, " do 20", sezon_end, "." )
-         , x="Ilość  goli", y="LIczebność wystąpeń")+ 
+         , x="Liczba  goli", y="LIczebność wystąpeń")+ 
     scale_fill_discrete(name="Gole", breaks=c("FTHG", "FTAG"),
                         labels=c("Bramki Gospodarzy", "Bramki Gości"))  +
     scale_x_continuous(limits=c(-1,9), breaks=c(0:9)) +     theme_minimal() +
@@ -198,7 +198,7 @@ Histogram_t <- function(league, sezon_start, sezon_end, team){
       geom_histogram(stat="identity",position="dodge") +
       labs(title= paste0("Liczebność goli w meczu - ", 
                          league_name," ", paste0(team, collapse = ", "), ".\n Od sezonu 20", sezon_start, " do 20", sezon_end, "." )
-           , x="Ilość  goli", y="LIczebność wystąpeń")+ 
+           , x="Liczba  goli", y="LIczebność wystąpeń")+ 
       scale_fill_discrete(name="Gole", breaks=c("FTHG", "FTAG"),
                           labels=c("Bramki Gospodarzy", "Bramki Gości"))  +
       scale_x_continuous(limits=c(-1,9), breaks=c(0:9)) +     theme_minimal() +
@@ -471,9 +471,9 @@ Najczestszy_wynik <- function(league, sezon_start, sezon_end){
     scale_size(range = c(0,50)) +
     theme_bw() +  labs(title= paste0("Najczęstszy wynik spotkania w % - ", 
                                           league_name, ".\n Od sezonu 20", sezon_start, " do 20", sezon_end, "." )
-                            , x="Ilość goli gospodarzy", y="Ilość goli gości") +
-    scale_x_continuous(limits=c(0,9), breaks=c(0:max(FTAG))) + 
-    scale_y_continuous(limits=c(0,9), breaks=c(0:max(FTHG)))  
+                            , x="Liczba goli gospodarzy", y="Liczba goli gości") +
+    scale_x_continuous(limits=c(0,9), breaks=c(0:max(y$FTAG))) + 
+    scale_y_continuous(limits=c(0,9), breaks=c(0:max(y$FTHG)))  
   
  
   
@@ -537,3 +537,16 @@ Najczestszy_wynik_tabela <- function(league, sezon_start, sezon_end){
 #    df$pred <- round(df$pred, 2)
 #  }
 
+
+Predykcja_tabela <- function(dane = df_razem , model = "LogisticRegression", league = "Seria A", mw  ){
+  
+  league <- ifelse(league=="Premier League", "premier", tolower(gsub(" ", "", league)))
+  
+  df <- dane[dane$liga == league & dane$Kolejka == mw & dane$model == model,c("Gospodarz",  "Gosc" , "pred_value","pred_th" )]
+  
+  df$pred_value <- round(as.numeric(df$pred_value), 3)
+  
+  names(df) <- c("Gospodarz", "Gość", "Wartość predykcji 1/0", "Przewidywany wynik")
+  
+  df
+}

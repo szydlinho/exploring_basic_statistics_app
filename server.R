@@ -33,6 +33,26 @@ for (files in list.files(path = ".", "*.csv")){
   teams_df <- rbind(teams_df, new)
 }
 
+df_glm <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 1, header = F)[,c(1:5,6 )]
+df_glm %>% mutate(model = "LogisticRegression") -> df_glm
+df_dt <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 2, header = F)[,c(1:5 )]
+df_dt %>% mutate(X6 = ifelse(X5 == "0", " Remis_lub_gosc", "Gospodarz"),
+                 model = "DecisionTree") -> df_dt
+df_rf <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 3, header = F)[,c(1:5 )]
+df_rf %>% mutate(X6 = ifelse(X5 == "0", " Remis_lub_gosc", "Gospodarz"),
+                 model = "RandomForest") -> df_rf
+df_razem <- rbind(df_glm, df_dt, df_rf)
+names(df_razem) <- c("Kolejka", "liga", "Gospodarz", "Gosc","pred_value", "pred_th", "model")
+# mw_pl <- max(df_razem[df_razem$liga == "premier", "Kolejka"], na.rm =T)
+# mw_ll <- max(df_razem[df_razem$liga == "laliga", "Kolejka"], na.rm =T)
+# mw_sa <- max(df_razem[df_razem$liga == "seriaa", "Kolejka"], na.rm =T)
+# mw_bu <- max(df_razem[df_razem$liga == "bundesliga", "Kolejka"], na.rm =T)
+# 
+# mw_pl_u <- unique(df_razem[df_razem$liga == "premier", "Kolejka"], na.rm =T)
+# mw_ll_u <- unique(df_razem[df_razem$liga == "laliga", "Kolejka"], na.rm =T)
+# mw_sa_u <- unique(df_razem[df_razem$liga == "seriaa", "Kolejka"], na.rm =T)
+# mw_bu_u <- unique(df_razem[df_razem$liga == "bundesliga", "Kolejka"], na.rm =T)
+
 shinyServer(function(input, output) {
   
   source("page_ui.R", local = TRUE, encoding = "UTF-8")
@@ -99,7 +119,7 @@ shinyServer(function(input, output) {
     if (nrow(dane)>0){
     
       renderBarChart(div_id = "interactive_hist", grid_left = '10%', direction = "vertical", grid_right =  '15%',
-                     axis.x.name = "Ilość goli", axis.y.name = "Liczebność wystąpień",
+                     axis.x.name = "Liczba goli", axis.y.name = "Liczebność wystąpień",
                      data = dane)
       
       if (is.null(input$teams_h1)){
@@ -139,13 +159,13 @@ shinyServer(function(input, output) {
       
       # Call functions from ECharts2Shiny to render charts
       renderBarChart(div_id = "interactive_hist_by_final_a", grid_left = '10%', direction = "vertical", grid_right =  '27%',
-                     axis.x.name = "Ilość goli gospodarzy", axis.y.name = "Liczebność wystąpień",
+                     axis.x.name = "Liczba goli jako gospodarz", axis.y.name = "Liczebność wystąpień",
                      data = dane_h2)
       
       
       # Call functions from ECharts2Shiny to render charts
       renderBarChart(div_id = "interactive_hist_by_final_b", grid_left = '10%', direction = "vertical", grid_right =  '27%',
-                     axis.x.name = "Ilość goli gości", axis.y.name = "Liczebność wystąpień",
+                     axis.x.name = "Liczba goli jako gość", axis.y.name = "Liczebność wystąpień",
                      data = dane_h21)
       
       if (is.null(input$teams_h2)){
@@ -183,6 +203,31 @@ shinyServer(function(input, output) {
                                                                                       ,scrollX = FALSE,  dom = "t", lengthChange = FALSE, 
                                                                                       ordering = FALSE), rownames = FALSE) })
 
+  })
+  
+  output$mwselection <- renderUI({
+    selectInput("mwselection_values", "Wybierz kolejkę:", 
+                choices = unique(df_razem[df_razem$liga == ifelse(input$league_typed_prediction=="Premier League", 
+                                                                  "premier", 
+                                                                  tolower(gsub(" ", "", input$league_typed_prediction))), 
+                                          "Kolejka"], na.rm =T), selected = max(df_razem[df_razem$liga == ifelse(input$league_typed_prediction=="Premier League", 
+                                                                                                                    "premier", 
+                                                                                                                    tolower(gsub(" ", "", input$league_typed_prediction))), 
+                                                                                            "Kolejka"], na.rm =T) ,
+                multiple = FALSE)
+  })
+  observeEvent(input$prediction_butt, {
+  
+  output$prediction_table <- DT::renderDataTable({ DT::datatable(Predykcja_tabela(dane = df_razem,
+                                                                                model = gsub(" ", "",input$model_typed_prediction),
+                                                                                league =  ifelse(input$league_typed_prediction=="Premier League", 
+                                                                                                 "premier", 
+                                                                                                 tolower(gsub(" ", "", input$league_typed_prediction))),
+                                                                                mw = input$mwselection_values)
+                                                                ,options = list(
+                                                                 autoWidth = TRUE, searching = FALSE, columnDefs = list(list(width = '80px'))
+                                                                 ,scrollX = FALSE,  dom = "t", lengthChange = FALSE, 
+                                                                 ordering = FALSE), rownames = FALSE) })
   })
   
 })

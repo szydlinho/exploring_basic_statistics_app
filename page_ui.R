@@ -140,7 +140,32 @@ output$page <- renderUI({
                        
               )
               
+                       )),
+              ##############################################
+              #Panel 5
+              tabPanel("Predykcja", 
+                       br(),
+                       fluidRow(column(3, 
+                                       radioButtons(inputId = "league_typed_prediction", label = "Wybierz Ligę", 
+                                                    choices = c("Premier League", "La Liga", "Seria A", "Bundesliga"), 
+                                                    selected = "Seria A"),
+                                       radioButtons(inputId = "model_typed_prediction", label = "Wybierz model", 
+                                                    choices = c("Logistic Regression", "Decision Tree", "RandomForest"), 
+                                                    selected = "Logistic Regression"),
+                                       uiOutput("mwselection"),
+                                       actionButton("prediction_butt", "Pokaż predykcję", width = '100%'
+                                                    , icon("bar-chart-o"), 
+                                                    style="color: #fff; background-color: olivedrab; border-color: black")
+                                       
+                       ),
+                       column(7, 
+                              DT::dataTableOutput("prediction_table")
+                              
                        ))
+                              
+                       
+                       
+                       )
                        
   )
               
