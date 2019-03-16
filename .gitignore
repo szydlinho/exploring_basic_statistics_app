@@ -5,3 +5,4 @@
 *.csv
 obrazki/
 rsconnect/
+.httr-oauth

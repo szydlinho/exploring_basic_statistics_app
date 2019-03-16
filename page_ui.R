@@ -31,14 +31,15 @@ output$page <- renderUI({
                                        uiOutput("teams_selection_pie"),
                                        uiOutput("home_away"),
                                        textOutput("selected_teams_pie")
-                                    
-                       
+                  
                        ),
                        column(6, 
                               loadEChartsLibrary(),
                               
                               tags$div(id="interactive_pie", style="width:100%;height:400px;"),
-                              deliverChart(div_id = "interactive_pie")
+                              deliverChart(div_id = "interactive_pie"),
+                              br(),
+                              uiOutput("url_home_adv")
                               
                               #plotOutput("plot_kolowy"
                                          ))
@@ -69,7 +70,9 @@ output$page <- renderUI({
                               loadEChartsLibrary(),
                               
                               tags$div(id="interactive_hist", style="width:80%;height:400px;"),
-                              deliverChart(div_id = "interactive_hist")
+                              deliverChart(div_id = "interactive_hist"),
+                              br(),
+                              uiOutput("url_goals")
                        )
                        
                     )
@@ -98,8 +101,7 @@ output$page <- renderUI({
                                        
                        ),
                        column(9, 
-                              
-                              
+
                               #plotOutput("histogram_rozklad")
                               loadEChartsLibrary(),
                               
@@ -108,9 +110,13 @@ output$page <- renderUI({
                               )),
                        fluidRow(
                               column(9,offset = 3, 
+                                     
                               loadEChartsLibrary(),
                               tags$div(id="interactive_hist_by_final_b", style="width:80%;height:400px;"),
-                              deliverChart(div_id = "interactive_hist_by_final_b")
+                              deliverChart(div_id = "interactive_hist_by_final_b"),
+                              
+                              br(),
+                              uiOutput("url_goals2")
                        ))
               ),
               ##############################################
@@ -159,7 +165,16 @@ output$page <- renderUI({
                                        
                        ),
                        column(7, 
-                              DT::dataTableOutput("prediction_table")
+                              DT::dataTableOutput("prediction_table"),
+                              br(),
+                              htmlOutput("info_pred"),
+                              
+                              br(),
+                              uiOutput("pred1"),
+                              br(),
+                              uiOutput("pred2"),
+                              br(),
+                              uiOutput("pred3")
                               
                        ))
                               

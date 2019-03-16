@@ -1,10 +1,10 @@
-suppressMessages(library(ggplot2))
-suppressMessages(library(reshape2))
-suppressMessages(library(scales))
+library(ggplot2)
+library(reshape2)
+library(scales)
 #library(plyr)
-suppressMessages(library(data.table))
-suppressMessages(library(dplyr))
-#library(xlsx)
+library(data.table)
+library(dplyr)
+
 # league <- "Premier League"
 # sezon_start <- 2010
 # sezon_end <- 2018
@@ -54,65 +54,48 @@ Kolowy <- function(league, sezon_start, sezon_end){
 
 }
 
-Kolowy_dane <- function(league, sezon_start, sezon_end, team = NULL, homeaway = NULL){
+Kolowy_dane <- function(league, sezon_start, sezon_end){
   
   sezon_start <- as.numeric(substr(sezon_start,3, 4))
   sezon_end <- as.numeric(substr(sezon_end,3, 4))
-
+  
+  #disk <- "F:"
+  #path <- paste0(disk, "/data_football/")
   league_name <- league
   
   league <- ifelse(league=="Premier League", "premier", league)
   path_dt <- paste0(tolower(gsub(" ", "", ifelse(league=="premier", "eng", league), )), "/")
   
   
-  dane <- read.csv(paste0(tolower(gsub(" ", "", league, )), "_raw_final.csv"), header=T)[,-1]
+  dane <- read.csv(paste0(
+    #path_dt,  
+    tolower(gsub(" ", "", league, )), "_raw_final.csv"), header=T)[,-1]
   dane <- dane[,c("HomeTeam", "AwayTeam", "FTHG", "FTAG", "FTR", "Sezon", "MW")]
   
   #dane$Date <- as.Date(dane$Date, "%Y-%m-%d")
   
   dane <- dane[dane$Sezon >= sezon_start  & dane$Sezon <= sezon_end, ]
   
-  if (!is.null(team)){
-    
-    if(homeaway == "Gospodarz"){
-      dane <- dane[dane$HomeTeam %in% team , ]
-    } else{
-      dane <- dane[ dane$AwayTeam %in% team, ]
+ 
+  df <- data.frame(wynik = as.data.frame(table(dane$FTR))[,1],
+                   ilosc = as.data.frame(table(dane$FTR))[,2])
+  
+  df$wynik <- as.character(df$wynik)
+  for (i in 1:3){
+    if (df[i, "wynik"] == "H"){
+      df[i, "wynik"] <-  "Gospodarz"
+    } else if (df[i, "wynik"] == "D"){
+      df[i, "wynik"] <- "Remis"
+    } else {
+      df[i, "wynik"] <- "Gość"
     }
-    
-    
-    if (nrow(dane) == 0){
-      dane <- data.frame(FTHG = numeric(), FTAG = numeric(), FTR = factor())
-    }
-    
   }
   
-  if (nrow(dane) >0){
-    df <- data.frame(wynik = as.data.frame(table(dane$FTR))[,1],
-                     ilosc = as.data.frame(table(dane$FTR))[,2])
-    
-    df$wynik <- as.character(df$wynik)
-    for (i in 1:3){
-      if (df[i, "wynik"] == "H"){
-        df[i, "wynik"] <-  "Gospodarz"
-      } else if (df[i, "wynik"] == "D"){
-        df[i, "wynik"] <- "Remis"
-      } else {
-        df[i, "wynik"] <- "Gość"
-      }
-    }
-    
-    dane <-    c(rep(df[1, "wynik"], df[1, "ilosc"]),
-                 rep(df[2, "wynik"], df[2, "ilosc"]),
-                 rep(df[3, "wynik"], df[3, "ilosc"]))
-    
-    dane
-  } else {
-    dane <- NULL
-    
-    dane
-  }
+  dane <-    c(rep(df[1, "wynik"], df[1, "ilosc"]),
+                rep(df[2, "wynik"], df[2, "ilosc"]),
+                rep(df[3, "wynik"], df[3, "ilosc"]))
   
+  dane
 }
 
 Histogram <- function(league, sezon_start, sezon_end){
@@ -149,7 +132,7 @@ Histogram <- function(league, sezon_start, sezon_end){
     geom_histogram(stat="identity",position="dodge") +
     labs(title= paste0("Liczebność goli w meczu - ", 
                        league_name, ".\n Od sezonu 20", sezon_start, " do 20", sezon_end, "." )
-         , x="Liczba  goli", y="LIczebność wystąpeń")+ 
+         , x="Ilość  goli", y="LIczebność wystąpeń")+ 
     scale_fill_discrete(name="Gole", breaks=c("FTHG", "FTAG"),
                         labels=c("Bramki Gospodarzy", "Bramki Gości"))  +
     scale_x_continuous(limits=c(-1,9), breaks=c(0:9)) +     theme_minimal() +
@@ -198,7 +181,7 @@ Histogram_t <- function(league, sezon_start, sezon_end, team){
       geom_histogram(stat="identity",position="dodge") +
       labs(title= paste0("Liczebność goli w meczu - ", 
                          league_name," ", paste0(team, collapse = ", "), ".\n Od sezonu 20", sezon_start, " do 20", sezon_end, "." )
-           , x="Liczba  goli", y="LIczebność wystąpeń")+ 
+           , x="Ilość  goli", y="LIczebność wystąpeń")+ 
       scale_fill_discrete(name="Gole", breaks=c("FTHG", "FTAG"),
                           labels=c("Bramki Gospodarzy", "Bramki Gości"))  +
       scale_x_continuous(limits=c(-1,9), breaks=c(0:9)) +     theme_minimal() +
@@ -207,15 +190,18 @@ Histogram_t <- function(league, sezon_start, sezon_end, team){
 }
 
 
-Histogram_dane <- function(league, sezon_start, sezon_end, team = NULL){
+Histogram_dane <- function(league, sezon_start, sezon_end, team){
   
   sezon_start <- as.numeric(substr(sezon_start,3, 4))
   sezon_end <- as.numeric(substr(sezon_end,3, 4))
-
+  
+  #disk <- "F:"
+  #path <- paste0(disk, "/data_football/")
   league_name <- league
   
   league <- ifelse(league=="Premier League", "premier", league)
   path_dt <- paste0(tolower(gsub(" ", "", ifelse(league=="premier", "eng", league), )), "/")
+  
   
   dane <- read.csv(paste0(
     #path_dt,  
@@ -223,9 +209,6 @@ Histogram_dane <- function(league, sezon_start, sezon_end, team = NULL){
   dane <- dane[,c("HomeTeam", "AwayTeam", "FTHG", "FTAG", "FTR", "Sezon", "MW")]
   
   dane <- dane[dane$Sezon >= sezon_start  & dane$Sezon <= sezon_end, ]
-  
-  if (!is.null(team)){
-    
   dane <- dane[dane$HomeTeam %in% team | dane$AwayTeam %in% team, ]
   
   if (nrow(dane) > 0){
@@ -240,7 +223,7 @@ Histogram_dane <- function(league, sezon_start, sezon_end, team = NULL){
     dane <- data.frame(FTHG = numeric(), FTAG = numeric())
   }
 
-  } 
+  
   
   df2 <- dane[,c("FTHG", "FTAG")]
   #table(df2)
@@ -299,74 +282,7 @@ Histogramy_gole <- function(league, sezon_start, sezon_end){
 }
 
 
-Histogram_dane_hda_FTHG <- function(league, sezon_start, sezon_end, team = NULL){
-  
-    sezon_st <- as.numeric(substr(sezon_start,3, 4))
-    sezon_ed <- as.numeric(substr(sezon_end,3, 4))
-    
-    #disk <- "F:"
-    #path <- paste0(disk, "/data_football/")
-    league_name <- league
-    
-    league <- ifelse(league=="Premier League", "premier", league)
-    path_dt <- paste0(tolower(gsub(" ", "", ifelse(league=="premier", "eng", league), )), "/")
-    
-    
-    dane <- read.csv(paste0(
-      #path_dt,  
-      tolower(gsub(" ", "", league, )), "_raw_final.csv"), header=T)[,-1]
-    dane <- dane[,c("HomeTeam", "AwayTeam", "FTHG", "FTAG", "FTR", "Sezon", "MW")]
-    
-    #dane$Date <- as.Date(dane$Date, "%Y-%m-%d")
-    
-    dane <- dane[dane$Sezon >= sezon_st  & dane$Sezon <= sezon_ed, ]
-    
-    if (!is.null(team)){
-      dane <- dane[dane$HomeTeam %in% team, ]
-      
-      df2 <- dane[,c("FTHG", "FTR")]
-      
-      df2 %>% group_by(FTHG,FTR) %>% dplyr::summarise(Freq=n()) %>% as.data.frame() %>% select(FTR, FTHG, Freq) -> df2_final 
-      df2_final <- table(df2)
-      
-      df2_final <-  as.data.frame.array(df2_final)
-      
-      df2_final %>% select(H, D, A) -> df2_final
-      
-      names(df2_final) <- c("Wygrana gospodarzy", "Remis", "Wygrana gości")
-      
-      if (nrow(dane) == 0){
-        dane <- data.frame(FTHG = numeric(), FTAG = numeric(), FTR = factor())
-        
-        dane
-        
-      }  else {
-        
-        df2_final
-      }
-    } else {
-      
-      df2 <- dane[,c("FTHG", "FTR")]
-      
-      df2 %>% group_by(FTHG,FTR) %>% dplyr::summarise(Freq=n()) %>% as.data.frame() %>% select(FTR, FTHG, Freq) -> df2_final 
-      df2_final <- table(df2)
-      
-      df2_final <-  as.data.frame.array(df2_final)
-      
-      df2_final %>% select(H, D, A) -> df2_final
-      
-      names(df2_final) <- c("Wygrana gospodarzy", "Remis", "Wygrana gości")
-      
-      df2_final
-    }
-   
-    
-
-  
-}
-
-
-Histogram_dane_hda_FTAG <- function(league, sezon_start, sezon_end, team = NULL){
+Histogram_dane_hda_FTHG <- function(league, sezon_start, sezon_end){
   
   sezon_start <- as.numeric(substr(sezon_start,3, 4))
   sezon_end <- as.numeric(substr(sezon_end,3, 4))
@@ -387,46 +303,58 @@ Histogram_dane_hda_FTAG <- function(league, sezon_start, sezon_end, team = NULL)
   #dane$Date <- as.Date(dane$Date, "%Y-%m-%d")
   
   dane <- dane[dane$Sezon >= sezon_start  & dane$Sezon <= sezon_end, ]
-  if (!is.null(team)){
-    dane <- dane[dane$AwayTeam %in% team, ]
-    
-    df2 <- dane[,c("FTAG", "FTR")]
-    
-    df2 %>% group_by(FTAG,FTR) %>% dplyr::summarise(Freq=n()) %>% as.data.frame() %>% 
-      select(FTR, FTAG, Freq) -> df2_final 
-    df2_final <- table(df2)
-    
-    df2_final <-  as.data.frame.array(df2_final)
-    
-    df2_final %>% select(H, D, A) -> df2_final
-    
-    names(df2_final) <- c("Wygrana gospodarzy", "Remis", "Wygrana gości")
-    
-    if (nrow(dane) == 0){
-      dane <- data.frame(FTHG = numeric(), FTAG = numeric(), FTR = factor())
-      
-      dane
-      
-    }  else {
-      
-      df2_final
-    }
-  } else {
-    
-    df2 <- dane[,c("FTAG", "FTR")]
-    
-    df2 %>% group_by(FTAG,FTR) %>% dplyr::summarise(Freq=n()) %>% as.data.frame() %>% 
-      select(FTR, FTAG, Freq) -> df2_final 
-    df2_final <- table(df2)
-    
-    df2_final <-  as.data.frame.array(df2_final)
-    
-    df2_final %>% select(H, D, A) -> df2_final
-    
-    names(df2_final) <- c("Wygrana gospodarzy", "Remis", "Wygrana gości")
-    
-    df2_final
-  }
+  
+  df2 <- dane[,c("FTHG", "FTR")]
+
+  df2 %>% group_by(FTHG,FTR) %>% dplyr::summarise(Freq=n()) %>% as.data.frame() %>% select(FTR, FTHG, Freq) -> df2_final 
+  df2_final <- table(df2)
+  
+  df2_final <-  as.data.frame.array(df2_final)
+  
+  df2_final %>% select(H, D, A) -> df2_final
+  
+  names(df2_final) <- c("Wygrana gospodarzy", "Remis", "Wygrana gości")
+
+  df2_final
+  
+}
+
+
+Histogram_dane_hda_FTAG <- function(league, sezon_start, sezon_end){
+  
+  sezon_start <- as.numeric(substr(sezon_start,3, 4))
+  sezon_end <- as.numeric(substr(sezon_end,3, 4))
+  
+  #disk <- "F:"
+  #path <- paste0(disk, "/data_football/")
+  league_name <- league
+  
+  league <- ifelse(league=="Premier League", "premier", league)
+  path_dt <- paste0(tolower(gsub(" ", "", ifelse(league=="premier", "eng", league), )), "/")
+  
+  
+  dane <- read.csv(paste0(
+    #path_dt,  
+    tolower(gsub(" ", "", league, )), "_raw_final.csv"), header=T)[,-1]
+  dane <- dane[,c("HomeTeam", "AwayTeam", "FTHG", "FTAG", "FTR", "Sezon", "MW")]
+  
+  #dane$Date <- as.Date(dane$Date, "%Y-%m-%d")
+  
+  dane <- dane[dane$Sezon >= sezon_start  & dane$Sezon <= sezon_end, ]
+  
+  df2 <- dane[,c("FTAG", "FTR")]
+  
+  df2 %>% group_by(FTAG,FTR) %>% dplyr::summarise(Freq=n()) %>% as.data.frame() %>% select(FTR, FTAG, Freq) -> df2_final 
+  df2_final <- table(df2)
+  
+  df2_final <-  as.data.frame.array(df2_final)
+  
+  df2_final %>% select(H, D, A) -> df2_final
+  
+  names(df2_final) <- c("Wygrana gospodarzy", "Remis", "Wygrana gości")
+  
+  df2_final
+  
   
   
 }
@@ -454,6 +382,8 @@ Najczestszy_wynik <- function(league, sezon_start, sezon_end){
   
   dane <- dane[dane$Sezon >= sezon_start  & dane$Sezon <= sezon_end, ]
   
+  
+
   mytable <- table(dane$FTHG,dane$FTAG) 
 
   
@@ -462,18 +392,18 @@ Najczestszy_wynik <- function(league, sezon_start, sezon_end){
   
   
   xx <- round(prop.table(mytable) * 100,2)
-  
+  xx
   y <- melt(xx)
-  names(y) <- c("FTHG","FTAG","value")
+
   ggplot(y, aes(FTHG, FTAG)) +
     geom_point(aes(size = value), alpha=0.7, color="lightgreen", show.legend=FALSE) +
     geom_text(aes(label = value), color="black")  +
     scale_size(range = c(0,50)) +
     theme_bw() +  labs(title= paste0("Najczęstszy wynik spotkania w % - ", 
                                           league_name, ".\n Od sezonu 20", sezon_start, " do 20", sezon_end, "." )
-                            , x="Liczba goli gospodarzy", y="Liczba goli gości") +
-    scale_x_continuous(limits=c(0,9), breaks=c(0:max(y$FTAG))) + 
-    scale_y_continuous(limits=c(0,9), breaks=c(0:max(y$FTHG)))  
+                            , x="Ilość goli gospodarzy", y="Ilość goli gości") +
+    scale_x_continuous(limits=c(0,9), breaks=c(0:max(FTAG))) + 
+    scale_y_continuous(limits=c(0,9), breaks=c(0:max(FTHG)))  
   
  
   
@@ -494,7 +424,8 @@ Najczestszy_wynik_tabela <- function(league, sezon_start, sezon_end){
   
   #dane <- dane[dane$HomeTeam == "Liverpool" | dane$AwayTeam == "Liverpool" , ]
   dane <- dane[dane$Sezon >= sezon_start  & dane$Sezon <= sezon_end, ]
- 
+  
+  
   attach(dane)
   mytable <- table(FTHG,FTAG) 
   
@@ -537,20 +468,3 @@ Najczestszy_wynik_tabela <- function(league, sezon_start, sezon_end){
 #    df$pred <- round(df$pred, 2)
 #  }
 
-
-
-Predykcja_tabela <- function(dane = df_razem , model = "LogisticRegression", league = "Seria A", mw ){
-  
-  league <- ifelse(league=="Premier League", "premier", tolower(gsub(" ", "", league)))
-  model_abb <- ifelse(model == "LogisticRegression", "glm", ifelse(model == "DecisionTrees", "dt", "rf"))
-  
-  df <- dane[dane$league == league & dane$MW == mw & dane$model == model_abb,c("HomeTeam",  "AwayTeam" , "prediction_value", "prediction_10", "result" ,"correct" )]
-  
-  #df$pred_value <- round(as.numeric(df$pred_value), 3)
-  df$prediction_10 <- ifelse(df$prediction_10 ==1, "1", "X2")
-  
-  names(df) <- c("Gospodarz", "Gość", "Wartość predykcji <0,1>", "Predykcja", "Wynik", "Poprawność")
-  
-  df$Poprawność <- ifelse(df$Poprawność == TRUE, "true", "false")
-  df
-}

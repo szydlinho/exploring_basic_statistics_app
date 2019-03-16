@@ -1,9 +1,10 @@
-library(shiny)
-library(ECharts2Shiny)
-library(shinyWidgets)
+suppressMessages(library(shiny))
+suppressMessages(library(ECharts2Shiny))
+suppressMessages(library(shinyWidgets))
 
-teams_df <- data.frame(teams = character(), 
+teams_df <- data.frame(teams = character(),
                        league = character())
+
 for (files in list.files(path = ".", "*.csv")){
   
   df <- read.csv(files)[,c("HomeTeam","AwayTeam")]
@@ -17,7 +18,7 @@ for (files in list.files(path = ".", "*.csv")){
   } else if(grepl("laliga",files )){
     
     league <- rep("La Liga", length(teams))
-     
+    
   } else if(grepl("premier",files )){
     
     league <- rep("Premier League", length(teams))
@@ -33,16 +34,59 @@ for (files in list.files(path = ".", "*.csv")){
   teams_df <- rbind(teams_df, new)
 }
 
-df_glm <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 1, header = F)[,c(1:5,6 )]
-df_glm %>% mutate(model = "LogisticRegression") -> df_glm
-df_dt <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 2, header = F)[,c(1:5 )]
-df_dt %>% mutate(X6 = ifelse(X5 == "0", " Remis_lub_gosc", "Gospodarz"),
-                 model = "DecisionTree") -> df_dt
-df_rf <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 3, header = F)[,c(1:5 )]
-df_rf %>% mutate(X6 = ifelse(X5 == "0", " Remis_lub_gosc", "Gospodarz"),
-                 model = "RandomForest") -> df_rf
-df_razem <- rbind(df_glm, df_dt, df_rf)
-names(df_razem) <- c("Kolejka", "liga", "Gospodarz", "Gosc","pred_value", "pred_th", "model")
+# 
+# token <- readRDS("droptoken.rds")
+# #datasets <- list()
+# list_files <- c()
+# for (i in 1:4) {
+#   list_files[i] <- drop_search("raw_final.csv")$matches[[i]]$metadata$name
+# }
+# 
+# list_files <- paste0("data_football/", list_files)
+# 
+# for (files in list_files){
+# 
+#   df <- drop_read_csv(files, dtoken = token)[,c("HomeTeam","AwayTeam")]
+# 
+#   teams <- unique(c(as.character(df$HomeTeam), as.character(df$AwayTeam)))
+# 
+#   if (grepl("bundesliga",files )){
+# 
+#     league <- rep("Bundesliga", length(teams))
+# 
+#   } else if(grepl("laliga",files )){
+# 
+#     league <- rep("La Liga", length(teams))
+# 
+#   } else if(grepl("premier",files )){
+# 
+#     league <- rep("Premier League", length(teams))
+# 
+#   } else if(grepl("seriaa",files )){
+# 
+#     league <- rep("Seria A", length(teams))
+#   }
+# 
+#   new <- data.frame(teams = teams,
+#                     league = league)
+# 
+#   teams_df <- rbind(teams_df, new)
+# }
+# 
+# df_glm <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 1, header = F)[,c(1:5,6 )]
+# df_glm %>% mutate(model = "LogisticRegression") -> df_glm
+# df_dt <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 2, header = F)[,c(1:5 )]
+# df_dt %>% mutate(X6 = ifelse(X5 == "0", " Remis_lub_gosc", "Gospodarz"),
+#                  model = "DecisionTree") -> df_dt
+# df_rf <- read.xlsx("predictions_to_analysis.xlsx", sheetIndex = 3, header = F)[,c(1:5 )]
+# df_rf %>% mutate(X6 = ifelse(X5 == "0", " Remis_lub_gosc", "Gospodarz"),
+#                  model = "RandomForest") -> df_rf
+# df_razem <- rbind(df_glm, df_dt, df_rf)
+# names(df_razem) <- c("Kolejka", "liga", "Gospodarz", "Gosc","pred_value", "pred_th", "model")
+
+df_razem <- read.csv("pred/predictions.csv", header = T)
+  #drop_read_csv("data_football/predictions.csv", dtoken = token)
+  #
 # mw_pl <- max(df_razem[df_razem$liga == "premier", "Kolejka"], na.rm =T)
 # mw_ll <- max(df_razem[df_razem$liga == "laliga", "Kolejka"], na.rm =T)
 # mw_sa <- max(df_razem[df_razem$liga == "seriaa", "Kolejka"], na.rm =T)
@@ -103,6 +147,11 @@ shinyServer(function(input, output) {
       })
     
     }
+    
+    url <- a("Przewaga własnego boiska", href="https://analizadanychwpilce.wordpress.com/2018/08/14/przewaga-wlasnego-boiska")
+    output$url_home_adv <- renderUI({
+      tagList("Po więcej informacji:", url)
+    })
   })
   
 
@@ -138,7 +187,11 @@ shinyServer(function(input, output) {
       
      
     }
-
+    
+    url <- a("Artykuł dotyczący rozkładu goli", href="https://analizadanychwpilce.wordpress.com/2018/08/16/gole-zdarzenia-rzadkie")
+    output$url_goals <- renderUI({
+      tagList("Po więcej informacji:", url)
+    })
     
   })
   
@@ -185,7 +238,10 @@ shinyServer(function(input, output) {
       
     }
     
-   
+    url <- a("Artykuł dotyczący rozkładu goli", href="https://analizadanychwpilce.wordpress.com/2018/08/16/gole-zdarzenia-rzadkie")
+    output$url_goals2 <- renderUI({
+      tagList("Po więcej informacji:", url)
+    })
     
     
   })
@@ -207,13 +263,13 @@ shinyServer(function(input, output) {
   
   output$mwselection <- renderUI({
     selectInput("mwselection_values", "Wybierz kolejkę:", 
-                choices = unique(df_razem[df_razem$liga == ifelse(input$league_typed_prediction=="Premier League", 
+                choices = unique(df_razem[df_razem$league == ifelse(input$league_typed_prediction=="Premier League", 
                                                                   "premier", 
                                                                   tolower(gsub(" ", "", input$league_typed_prediction))), 
-                                          "Kolejka"], na.rm =T), selected = max(df_razem[df_razem$liga == ifelse(input$league_typed_prediction=="Premier League", 
+                                          "MW"], na.rm =T), selected = max(df_razem[df_razem$league == ifelse(input$league_typed_prediction=="Premier League", 
                                                                                                                     "premier", 
                                                                                                                     tolower(gsub(" ", "", input$league_typed_prediction))), 
-                                                                                            "Kolejka"], na.rm =T) ,
+                                                                                            "MW"], na.rm =T) ,
                 multiple = FALSE)
   })
   observeEvent(input$prediction_butt, {
@@ -227,8 +283,29 @@ shinyServer(function(input, output) {
                                                                 ,options = list(
                                                                  autoWidth = TRUE, searching = FALSE, columnDefs = list(list(width = '80px'))
                                                                  ,scrollX = FALSE,  dom = "t", lengthChange = FALSE, 
-                                                                 ordering = FALSE), rownames = FALSE) })
+                                                                 ordering = FALSE), rownames = FALSE) %>%  DT::formatStyle('Poprawność',
+                      backgroundColor = DT::styleEqual(c("false", "true"), c('red', 'green')))
+    })
+  
+  output$info_pred <- renderText({ 
+    HTML(paste("1 - Wygrana gospodarza", " X2 - remis lub zwycięstwo gości", sep="<br/>"))
   })
+  url1 <- a("Model regresji logistycznej", href="https://analizadanychwpilce.wordpress.com/2018/09/15/przewidywanie-wyniku-spotkania-z-wykorzystaniem-regresji-logistycznej")
+  output$pred1 <- renderUI({
+    tagList("Logistic Regression:", url1)
+  })
+  url2 <- a("Model drzewa decyzyjnego", href="https://analizadanychwpilce.wordpress.com/2018/10/15/wykorzystanie-modelu-drzewa-decyzyjnego-do-analizy-wynikow-spotkania")
+  output$pred2 <- renderUI({
+    tagList("Decission Tree:", url2)
+  })
+  url3 <- a("Model lasów losowych", href="https://analizadanychwpilce.wordpress.com/2018/11/18/model-lasow-losowych")
+  output$pred3 <- renderUI({
+    tagList("Random Forest:", url3)
+    
+  })
+  })
+  
+ 
   
 })
 
